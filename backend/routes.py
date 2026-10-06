@@ -160,3 +160,10 @@ def get_response(response_id: int, db: Session = Depends(get_db)):
     if not response: 
         raise HTTPException(status_code=404, detail="Response not found") 
     return response 
+ 
+@router.get("/forms/public/{public_slug}", response_model=FormResponse) 
+def get_form_by_slug(public_slug: str, db: Session = Depends(get_db)): 
+    form = db.query(Form).filter(Form.public_slug == public_slug).first() 
+    if not form: 
+        raise HTTPException(status_code=404, detail="Form not found") 
+    return form 

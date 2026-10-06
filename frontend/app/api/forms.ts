@@ -39,3 +39,9 @@ export async function deleteForm(id: number) {
   if (!res.ok) throw new Error('Failed to delete form');
   return res.json();
 }
+
+export async function getFormBySlug(slug: string) {
+  const res = await fetch(`${API_URL}/forms/public/${slug}`);
+  if (!res.ok) throw new Error('Failed to fetch form');
+  return res.json();
+}

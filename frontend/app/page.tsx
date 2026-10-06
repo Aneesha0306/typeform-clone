@@ -113,6 +113,11 @@ export default function Dashboard() {
                 <p style={{ fontSize: '12px', color: '#666' }}>
                   Status: {form.is_published ? '✅ Published' : '📝 Draft'}
                 </p>
+                {form.is_published && (
+                  <p style={{ fontSize: '12px', color: '#0066cc', marginTop: '5px' }}>
+                    <strong>Public Link:</strong> <code>localhost:3000/respond/{form.public_slug}</code>
+                  </p>
+                )}
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
