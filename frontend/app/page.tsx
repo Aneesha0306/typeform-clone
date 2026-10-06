@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { getForms, createForm, deleteForm, updateForm } from './api/forms';
 
 interface Form {
@@ -105,7 +106,9 @@ export default function Dashboard() {
               }}
             >
               <div>
-                <h3>{form.title}</h3>
+                <Link href={`/builder/${form.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <h3 style={{ cursor: 'pointer', color: '#0066cc' }}>{form.title}</h3>
+                </Link>
                 <p>{form.description}</p>
                 <p style={{ fontSize: '12px', color: '#666' }}>
                   Status: {form.is_published ? '✅ Published' : '📝 Draft'}

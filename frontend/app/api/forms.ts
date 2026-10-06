@@ -6,6 +6,12 @@ export async function getForms() {
   return res.json();
 }
 
+export async function getForm(id: number) {
+  const res = await fetch(`${API_URL}/forms/${id}`);
+  if (!res.ok) throw new Error('Failed to fetch form');
+  return res.json();
+}
+
 export async function createForm(title: string, description?: string) {
   const res = await fetch(`${API_URL}/forms`, {
     method: 'POST',
