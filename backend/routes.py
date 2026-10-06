@@ -147,13 +147,19 @@ def submit_response(form_id: int, response_data: ResponseSubmit, db: Session = D
     db.refresh(new_response) 
     return new_response 
  
-@router.get("/forms/{form_id}/responses") 
-def list_responses(form_id: int, db: Session = Depends(get_db)): 
-    form = db.query(Form).filter(Form.id == form_id).first() 
-    if not form: 
-        raise HTTPException(status_code=404, detail="Form not found") 
-    return responses 
- 
+@router.get("/forms/{form_id}/responses")
+def list_responses(form_id: int, db: Session = Depends(get_db)):
+    form = db.query(Form).filter(Form.id == form_id).first()
+    if not form:
+        raise HTTPException(status_code=404, detail="Form not found")
+    responses = db.query(Response).filter(Response.form_id == form_id).all()
+    result = []
+    for response in responses:
+        answers = db.query(Answer).filter(Answer.response_id == response.id).all()
+        response.answers = answers
+        result.append(response)
+    return result
+
 @router.get("/responses/{response_id}", response_model=ResponseResponse) 
 def get_response(response_id: int, db: Session = Depends(get_db)): 
     response = db.query(Response).filter(Response.id == response_id).first() 

@@ -126,6 +126,15 @@ export default function Dashboard() {
                 >
                   {form.is_published ? 'Unpublish' : 'Publish'}
                 </button>
+
+                {form.is_published && (
+                  <Link href={`/results/${form.id}`} style={{ textDecoration: 'none' }}>
+                    <button style={{ padding: '6px 12px', cursor: 'pointer', background: '#28a745', color: 'white' }}>
+                      View Results
+                    </button>
+                  </Link>
+                )}
+                
                 <button
                   onClick={() => handleDelete(form.id)}
                   style={{ padding: '6px 12px', cursor: 'pointer', background: '#ff6b6b', color: 'white' }}
