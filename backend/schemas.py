@@ -21,3 +21,50 @@ class FormResponse(BaseModel):
  
     class Config: 
         from_attributes = True 
+ 
+class QuestionCreate(BaseModel): 
+    question_text: str 
+    question_type: str 
+    description: Optional[str] = None 
+    is_required: bool = False 
+ 
+class QuestionUpdate(BaseModel): 
+    question_text: Optional[str] = None 
+    description: Optional[str] = None 
+    is_required: Optional[bool] = None 
+ 
+class QuestionResponse(BaseModel): 
+    id: int 
+    form_id: int 
+    question_text: str 
+    question_type: str 
+    description: Optional[str] 
+    is_required: bool 
+    order: int 
+ 
+    class Config: 
+        from_attributes = True 
+ 
+class AnswerCreate(BaseModel): 
+    question_id: int 
+    answer_value: Optional[str] = None 
+ 
+class ResponseSubmit(BaseModel): 
+    answers: List[AnswerCreate] 
+ 
+class AnswerResponse(BaseModel): 
+    id: int 
+    question_id: int 
+    answer_value: Optional[str] 
+ 
+    class Config: 
+        from_attributes = True 
+ 
+class ResponseResponse(BaseModel): 
+    id: int 
+    form_id: int 
+    created_at: datetime 
+    answers: List[AnswerResponse] 
+ 
+    class Config: 
+        from_attributes = True 
