@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getForms, createForm, deleteForm, updateForm } from '@/app/api/forms';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 interface Form {
   id: number;
   title: string;
@@ -35,7 +37,7 @@ export default function Dashboard() {
       const formsWithCount = await Promise.all(
         formsData.map(async (form: Form) => {
           try {
-            const res = await fetch(`http://localhost:8000/forms/${form.id}/responses`);
+            const res = await fetch(`${API_URL}/forms/${form.id}/responses`);
             const responses = res.ok ? await res.json() : [];
             return {
               ...form,
@@ -277,7 +279,7 @@ export default function Dashboard() {
                       Public Link
                     </p>
                     <a
-                      href={`http://localhost:3000/respond/${form.public_slug}`}
+                      href={typeof window !== 'undefined' ? `${window.location.origin}/respond/${form.public_slug}` : `http://localhost:3000/respond/${form.public_slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
@@ -287,7 +289,7 @@ export default function Dashboard() {
                         wordBreak: 'break-all'
                       }}
                     >
-                      localhost:3000/respond/{form.public_slug}
+                      {typeof window !== 'undefined' ? `${window.location.origin.replace('https://', '').replace('http://', '')}/respond/${form.public_slug}` : `localhost:3000/respond/${form.public_slug}`}
                     </a>
                   </div>
                 )}
