@@ -26,6 +26,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadForms();
+
+    // Auto-refresh response counts every 5 seconds
+    const interval = setInterval(() => {
+      loadForms();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   async function loadForms() {
