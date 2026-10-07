@@ -1,218 +1,364 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { getFormBySlug } from '@/app/api/forms';
-import { getQuestions } from '@/app/api/questions';
+import { getQuestions as getFormQuestions } from '@/app/api/questions';
 import { submitResponse } from '@/app/api/responses';
 
 interface Question {
   id: number;
+  form_id: number;
   question_text: string;
   question_type: string;
+  description?: string;
   is_required: boolean;
+  order: number;
+  options?: Array<{ id: number; option_text: string; order: number }>;
 }
 
 interface Form {
   id: number;
   title: string;
-  description?: string;
+  description: string;
   is_published: boolean;
+  public_slug: string;
 }
 
-export default function RespondentFlow() {
+export default function RespondPage() {
   const params = useParams();
-  const slug = params.slug as string;
+  const router = useRouter();
   const [form, setForm] = useState<Form | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    loadForm();
-  }, [slug]);
+    const slug = params.slug as string;
+    if (!slug) return;
 
-  async function loadForm() {
-    try {
-      setLoading(true);
-      const formData = await getFormBySlug(slug);
-      if (!formData || !formData.is_published) {
-        setError('Form not found or not published');
-        return;
+    const loadForm = async () => {
+      try {
+        const formData = await getFormBySlug(slug);
+        setForm(formData);
+
+        const questionsData = await getFormQuestions(formData.id);
+        setQuestions(questionsData || []);
+      } catch (error) {
+        console.error('Error loading form:', error);
+      } finally {
+        setLoading(false);
       }
-      setForm(formData);
-      const questionsData = await getQuestions(formData.id);
-      setQuestions(questionsData);
-    } catch (err) {
-      setError('Failed to load form');
-    } finally {
-      setLoading(false);
+    };
+
+    loadForm();
+  }, [params.slug]);
+
+  // Keyboard Navigation
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Enter key to go next
+      if (e.key === 'Enter' && !submitting && currentIndex < questions.length - 1) {
+        e.preventDefault();
+        setCurrentIndex(currentIndex + 1);
+      }
+      // Arrow Right to go next
+      if (e.key === 'ArrowRight' && currentIndex < questions.length - 1) {
+        e.preventDefault();
+        setCurrentIndex(currentIndex + 1);
+      }
+      // Arrow Left to go back
+      if (e.key === 'ArrowLeft' && currentIndex > 0) {
+        e.preventDefault();
+        setCurrentIndex(currentIndex - 1);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [currentIndex, submitting, questions.length]);
+
+  const handleAnswerChange = (questionId: number, value: string) => {
+    setAnswers({ ...answers, [questionId]: value });
+  };
+
+  const handleNext = () => {
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex(currentIndex + 1);
     }
+  };
+
+  const handlePrevious = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
+  const handleSubmit = async () => {
+  if (!form) return;
+
+  try {
+    setSubmitting(true);
+
+    const answersList = questions.map((q) => ({
+      question_id: q.id,
+      answer_value: answers[q.id] || '',
+    }));
+
+    await submitResponse(form.id, answersList);
+    setSubmitted(true);
+  } catch (error) {
+    console.error('Error submitting response:', error);
+    alert('Error submitting form. Please try again.');
+  } finally {
+    setSubmitting(false);
   }
+};
 
-  async function handleNext() {
-    const currentQuestion = questions[currentQuestionIndex];
-    if (currentQuestion.is_required && !answers[currentQuestion.id]) {
-      setError('This question is required');
-      return;
-    }
-    setError('');
-
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    } else {
-      await handleSubmit();
-    }
-  }
-
-  async function handleSubmit() {
-    try {
-      const answerArray = questions.map((q) => ({
-        question_id: q.id,
-        answer_value: answers[q.id] || '',
-      }));
-      await submitResponse(form!.id, answerArray);
-      setSubmitted(true);
-    } catch (err) {
-      setError('Failed to submit response');
-    }
-  }
-
-  if (loading) return <div className="flex items-center justify-center h-screen">Loading...</div>;
-
-  if (error && !form) return <div className="flex items-center justify-center h-screen text-red-500">{error}</div>;
-
-  if (submitted) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4">Thank You!</h1>
-          <p className="text-xl text-gray-600">Your response has been recorded.</p>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-gray-600 text-lg">Loading form...</div>
+      </div>
+    );
+  }
+
+  if (form && !form.is_published) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="bg-white rounded-lg shadow-lg p-8 text-center max-w-md">
+          <div className="text-4xl mb-4">🔒</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Form Not Available</h2>
+          <p className="text-gray-600">This form is no longer accepting responses.</p>
         </div>
       </div>
     );
   }
 
-  if (!form || questions.length === 0) return <div className="flex items-center justify-center h-screen">No questions</div>;
+  if (!form) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-gray-600 text-lg">Form not found</div>
+      </div>
+    );
+  }
 
-  const currentQuestion = questions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+  if (submitted) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="bg-white rounded-lg shadow-lg p-8 text-center max-w-md">
+          <div className="text-5xl mb-4">✓</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Thank You!</h2>
+          <p className="text-gray-600">Thank you for your response!</p>
+        </div>
+      </div>
+    );
+  }
+
+  const currentQuestion = questions[currentIndex];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
-        {/* Progress Bar */}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+      <div className="max-w-2xl mx-auto">
+        {/* Progress Bar and Counter */}
         <div className="mb-8">
-          <div className="h-1 bg-gray-300 rounded-full overflow-hidden">
-            <div className="h-full bg-blue-600 transition-all duration-300" style={{ width: `${progress}%` }}></div>
+          <div className="flex justify-between items-center mb-2">
+            <p className="text-sm text-gray-600">
+              Question {currentIndex + 1} of {questions.length}
+            </p>
           </div>
-          <p className="text-sm text-gray-600 mt-2">{currentQuestionIndex + 1} of {questions.length}</p>
-        </div>
-
-        {/* Form Card */}
-        <div className="bg-white rounded-lg shadow-lg p-12">
-          <h1 className="text-3xl font-bold mb-2 text-gray-900">{form.title}</h1>
-          {form.description && <p className="text-gray-600 mb-8">{form.description}</p>}
-
-          {/* Question */}
-          <div className="mb-12">
-            <h2 className="text-2xl font-semibold mb-6 text-gray-900">
-              {currentQuestion.question_text}
-              {currentQuestion.is_required && <span className="text-red-500">*</span>}
-            </h2>
-
-            {/* Answer Input */}
-            {currentQuestion.question_type === 'short_text' && (
-              <input
-                type="text"
-                placeholder="Your answer..."
-                value={answers[currentQuestion.id] || ''}
-                onChange={(e) => setAnswers({ ...answers, [currentQuestion.id]: e.target.value })}
-                onKeyPress={(e) => e.key === 'Enter' && handleNext()}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
-                autoFocus
-              />
-            )}
-
-            {currentQuestion.question_type === 'long_text' && (
-              <textarea
-                placeholder="Your answer..."
-                value={answers[currentQuestion.id] || ''}
-                onChange={(e) => setAnswers({ ...answers, [currentQuestion.id]: e.target.value })}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600 min-h-24"
-                autoFocus
-              />
-            )}
-
-            {currentQuestion.question_type === 'email' && (
-              <input
-                type="email"
-                placeholder="your@email.com"
-                value={answers[currentQuestion.id] || ''}
-                onChange={(e) => setAnswers({ ...answers, [currentQuestion.id]: e.target.value })}
-                onKeyPress={(e) => e.key === 'Enter' && handleNext()}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
-                autoFocus
-              />
-            )}
-
-            {currentQuestion.question_type === 'number' && (
-              <input
-                type="number"
-                placeholder="0"
-                value={answers[currentQuestion.id] || ''}
-                onChange={(e) => setAnswers({ ...answers, [currentQuestion.id]: e.target.value })}
-                onKeyPress={(e) => e.key === 'Enter' && handleNext()}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
-                autoFocus
-              />
-            )}
-
-            {currentQuestion.question_type === 'yes_no' && (
-              <div className="flex gap-4">
-                {['Yes', 'No'].map((option) => (
-                  <button
-                    key={option}
-                    onClick={() => {
-                      setAnswers({ ...answers, [currentQuestion.id]: option });
-                      setTimeout(handleNext, 300);
-                    }}
-                    className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                      answers[currentQuestion.id] === option
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                    }`}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {error && <p className="text-red-500 mt-4">{error}</p>}
-          </div>
-
-          {/* Navigation */}
-          <div className="flex gap-4">
-            {currentQuestionIndex > 0 && (
-              <button
-                onClick={() => setCurrentQuestionIndex(currentQuestionIndex - 1)}
-                className="px-6 py-3 bg-gray-300 text-gray-800 rounded-lg font-semibold hover:bg-gray-400 transition"
-              >
-                Back
-              </button>
-            )}
-            <button
-              onClick={handleNext}
-              className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
-            >
-              {currentQuestionIndex === questions.length - 1 ? 'Submit' : 'Next'}
-            </button>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
+            />
           </div>
         </div>
+
+        {/* Form Header - Show only on first question */}
+        {currentIndex === 0 && (
+          <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">{form.title}</h1>
+            <p className="text-gray-600 text-lg">{form.description}</p>
+          </div>
+        )}
+
+        {/* Current Question - One at a time */}
+        {currentQuestion && (
+          <div className="bg-white rounded-lg shadow-lg p-8 min-h-96 flex flex-col justify-between">
+            <div>
+              <label className="block text-2xl font-semibold text-gray-900 mb-4">
+                {currentQuestion.question_text}
+                {currentQuestion.is_required && <span className="text-red-500 ml-2">*</span>}
+              </label>
+
+              {currentQuestion.description && (
+                <p className="text-sm text-gray-600 mb-6">{currentQuestion.description}</p>
+              )}
+
+              {/* Render Input based on type */}
+              {currentQuestion.question_type === 'short_text' && (
+                <input
+                  type="text"
+                  value={answers[currentQuestion.id] || ''}
+                  onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
+                  placeholder="Your answer..."
+                  autoFocus
+                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              )}
+
+              {currentQuestion.question_type === 'long_text' && (
+                <textarea
+                  value={answers[currentQuestion.id] || ''}
+                  onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
+                  placeholder="Your answer..."
+                  rows={6}
+                  autoFocus
+                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              )}
+
+              {currentQuestion.question_type === 'email' && (
+                <input
+                  type="email"
+                  value={answers[currentQuestion.id] || ''}
+                  onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
+                  placeholder="your@email.com"
+                  autoFocus
+                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              )}
+
+              {currentQuestion.question_type === 'number' && (
+                <input
+                  type="number"
+                  value={answers[currentQuestion.id] || ''}
+                  onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
+                  placeholder="0"
+                  autoFocus
+                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              )}
+
+              {currentQuestion.question_type === 'multiple_choice' && (
+                <div className="space-y-3">
+                  {currentQuestion.options?.map((option) => (
+                    <label key={option.id} className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-300 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition">
+                      <input
+                        type="radio"
+                        name={`q${currentQuestion.id}`}
+                        value={option.option_text}
+                        checked={answers[currentQuestion.id] === option.option_text}
+                        onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-lg text-gray-700">{option.option_text}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              {currentQuestion.question_type === 'dropdown' && (
+                <select
+                  value={answers[currentQuestion.id] || ''}
+                  onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
+                  autoFocus
+                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="">Select an option</option>
+                  {currentQuestion.options?.map((option) => (
+                    <option key={option.id} value={option.option_text}>
+                      {option.option_text}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              {currentQuestion.question_type === 'yes_no' && (
+                <div className="space-y-3">
+                  <label className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-300 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition">
+                    <input
+                      type="radio"
+                      name={`q${currentQuestion.id}`}
+                      value="Yes"
+                      checked={answers[currentQuestion.id] === 'Yes'}
+                      onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-lg text-gray-700">Yes</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer p-3 border-2 border-gray-300 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition">
+                    <input
+                      type="radio"
+                      name={`q${currentQuestion.id}`}
+                      value="No"
+                      checked={answers[currentQuestion.id] === 'No'}
+                      onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-lg text-gray-700">No</span>
+                  </label>
+                </div>
+              )}
+
+              {currentQuestion.question_type === 'rating' && (
+                <div className="flex gap-3">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleAnswerChange(currentQuestion.id, i.toString())}
+                      className={`px-6 py-3 text-lg rounded-lg font-semibold transition ${
+                        answers[currentQuestion.id] === i.toString()
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      {i}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Navigation Buttons */}
+            <div className="flex gap-3 mt-8 pt-6 border-t border-gray-200">
+              {currentIndex > 0 && (
+                <button
+                  onClick={handlePrevious}
+                  className="px-6 py-3 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 transition"
+                >
+                  ← Previous
+                </button>
+              )}
+
+              {currentIndex < questions.length - 1 ? (
+                <button
+                  onClick={handleNext}
+                  className="ml-auto px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition"
+                >
+                  Next →
+                </button>
+              ) : (
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="ml-auto px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 transition"
+                >
+                  {submitting ? 'Submitting...' : 'Submit'}
+                </button>
+              )}
+            </div>
+
+            {/* Keyboard Hints */}
+            <div className="text-xs text-gray-400 mt-4 text-center">
+              Press <kbd>Enter</kbd> to continue or use <kbd>←</kbd> <kbd>→</kbd> arrows
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

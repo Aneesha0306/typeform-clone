@@ -12,6 +12,12 @@ export async function getForm(id: number) {
   return res.json();
 }
 
+export async function getFormBySlug(slug: string) {
+  const response = await fetch(`${API_URL}/forms/public/${slug}`);
+  if (!response.ok) throw new Error('Failed to fetch form');
+  return response.json();
+}
+
 export async function createForm(title: string, description?: string) {
   const res = await fetch(`${API_URL}/forms`, {
     method: 'POST',
@@ -33,15 +39,24 @@ export async function updateForm(id: number, data: any) {
 }
 
 export async function deleteForm(id: number) {
-  const res = await fetch(`${API_URL}/forms/${id}`, {
-    method: 'DELETE',
-  });
-  if (!res.ok) throw new Error('Failed to delete form');
-  return res.json();
+  try {
+      const response = await fetch(`${API_URL}/forms/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      const error = await response.text();
+      console.error(`Delete failed: ${response.status} ${error}`);
+      throw new Error(`Failed to delete form: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Delete error:', error);
+    throw error;
+  }
 }
 
-export async function getFormBySlug(slug: string) {
-  const res = await fetch(`${API_URL}/forms/public/${slug}`);
-  if (!res.ok) throw new Error('Failed to fetch form');
-  return res.json();
-}

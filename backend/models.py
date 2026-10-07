@@ -21,8 +21,8 @@ class Form(Base):
     created_at = Column(DateTime, default=datetime.utcnow) 
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow) 
     creator = relationship("Creator", back_populates="forms") 
-    questions = relationship("Question", back_populates="form") 
-    responses = relationship("Response", back_populates="form") 
+    questions = relationship("Question", back_populates="form", cascade="all, delete-orphan") 
+    responses = relationship("Response", back_populates="form", cascade="all, delete-orphan") 
  
 class Question(Base): 
     __tablename__ = "questions" 
@@ -35,8 +35,8 @@ class Question(Base):
     order = Column(Integer, nullable=False) 
     created_at = Column(DateTime, default=datetime.utcnow) 
     form = relationship("Form", back_populates="questions") 
-    options = relationship("QuestionOption", back_populates="question") 
-    answers = relationship("Answer", back_populates="question") 
+    options = relationship("QuestionOption", back_populates="question", cascade="all, delete-orphan") 
+    answers = relationship("Answer", back_populates="question", cascade="all, delete-orphan") 
  
 class QuestionOption(Base): 
     __tablename__ = "question_options" 
@@ -52,7 +52,7 @@ class Response(Base):
     form_id = Column(Integer, ForeignKey("forms.id"), nullable=False) 
     created_at = Column(DateTime, default=datetime.utcnow) 
     form = relationship("Form", back_populates="responses") 
-    answers = relationship("Answer", back_populates="response") 
+    answers = relationship("Answer", back_populates="response", cascade="all, delete-orphan") 
  
 class Answer(Base): 
     __tablename__ = "answers" 

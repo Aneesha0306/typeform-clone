@@ -21,12 +21,25 @@ class FormResponse(BaseModel):
  
     class Config: 
         from_attributes = True 
+
+class QuestionOptionCreate(BaseModel):
+    option_text: str
+
+class QuestionOptionResponse(BaseModel):
+    id: int
+    question_id: int
+    option_text: str
+    order: int
+
+    class Config:
+        from_attributes = True
  
 class QuestionCreate(BaseModel): 
     question_text: str 
     question_type: str 
     description: Optional[str] = None 
-    is_required: bool = False 
+    is_required: bool = False
+    options: Optional[List[QuestionOptionCreate]] = None
  
 class QuestionUpdate(BaseModel): 
     question_text: Optional[str] = None 
@@ -40,7 +53,8 @@ class QuestionResponse(BaseModel):
     question_type: str 
     description: Optional[str] 
     is_required: bool 
-    order: int 
+    order: int
+    options: List[QuestionOptionResponse] = []
  
     class Config: 
         from_attributes = True 
@@ -67,4 +81,4 @@ class ResponseResponse(BaseModel):
     answers: List[AnswerResponse] 
  
     class Config: 
-        from_attributes = True 
+        from_attributes = True

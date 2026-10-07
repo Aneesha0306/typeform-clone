@@ -1,23 +1,26 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { getForms, createForm, deleteForm, updateForm } from './api/forms';
+import { useRouter } from 'next/navigation';
+import { getForms, createForm, deleteForm, updateForm } from '@/app/api/forms';
 
 interface Form {
   id: number;
   title: string;
-  description?: string;
+  description: string;
   is_published: boolean;
-  public_slug: string;
-  created_at: string;
+  public_slug?: string;
+}
+
+interface FormWithResponses extends Form {
+  responseCount: number;
 }
 
 export default function Dashboard() {
-  const [forms, setForms] = useState<Form[]>([]);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const [forms, setForms] = useState<FormWithResponses[]>([]);
   const [newTitle, setNewTitle] = useState('');
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadForms();
@@ -26,126 +29,363 @@ export default function Dashboard() {
   async function loadForms() {
     try {
       setLoading(true);
-      const data = await getForms();
-      setForms(data);
-    } catch (err) {
-      setError('Failed to load forms');
+      const formsData = await getForms();
+      
+      // Fetch response count for each form
+      const formsWithCount = await Promise.all(
+        formsData.map(async (form: Form) => {
+          try {
+            const res = await fetch(`http://localhost:8000/forms/${form.id}/responses`);
+            const responses = res.ok ? await res.json() : [];
+            return {
+              ...form,
+              responseCount: responses.length || 0
+            };
+          } catch (error) {
+            return { ...form, responseCount: 0 };
+          }
+        })
+      );
+      
+      setForms(formsWithCount);
+    } catch (error) {
+      console.error('Error loading forms:', error);
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleCreate() {
-    if (!newTitle.trim()) return;
+  async function handleCreateForm() {
+    if (!newTitle.trim()) {
+      alert('Please enter a form title');
+      return;
+    }
+
     try {
-      await createForm(newTitle);
+      const newForm = await createForm(newTitle, '');
       setNewTitle('');
-      loadForms();
-    } catch (err) {
-      setError('Failed to create form');
+      // Auto-navigate to builder
+      router.push(`/builder/${newForm.id}`);
+    } catch (error) {
+      console.error('Error creating form:', error);
+      alert('Failed to create form');
     }
   }
 
-  async function handleDelete(id: number) {
-    if (!confirm('Delete this form?')) return;
+  async function handlePublish(formId: number, isPublished: boolean) {
     try {
-      await deleteForm(id);
+      const form = forms.find((f) => f.id === formId);
+      if (!form) return;
+      
+      await updateForm(formId, {
+        ...form,
+        is_published: !isPublished
+      });
+      
       loadForms();
-    } catch (err) {
-      setError('Failed to delete form');
+    } catch (error) {
+      console.error('Error publishing form:', error);
     }
   }
 
-  async function handlePublish(id: number, published: boolean) {
+  async function handleDelete(formId: number) {
+    if (!confirm('Are you sure you want to delete this form?')) return;
+
     try {
-      await updateForm(id, { is_published: !published });
+      await deleteForm(formId);
       loadForms();
-    } catch (err) {
-      setError('Failed to update form');
+    } catch (error) {
+      console.error('Error deleting form:', error);
+      alert('Failed to delete form');
     }
   }
 
   return (
-    <div style={{ padding: '40px', fontFamily: 'sans-serif' }}>
-      <h1>Typeform Clone</h1>
-      
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      
-      <div style={{ marginBottom: '30px', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-        <h2>Create New Form</h2>
-        <input
-          type="text"
-          placeholder="Form title"
-          value={newTitle}
-          onChange={(e) => setNewTitle(e.target.value)}
-          style={{ padding: '8px', width: '300px', marginRight: '10px' }}
-        />
-        <button onClick={handleCreate} style={{ padding: '8px 16px', cursor: 'pointer' }}>
-          Create
-        </button>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', padding: '40px 20px' }}>
+      {/* Header */}
+      <div style={{ maxWidth: '1200px', margin: '0 auto', marginBottom: '40px' }}>
+        <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: '#111', margin: '0 0 10px 0' }}>
+          Typeform Clone
+        </h1>
+        <p style={{ color: '#666', margin: '0 0 30px 0' }}>
+          Create, manage, and share forms with ease
+        </p>
+
+        {/* Create Form Section */}
+        <div
+          style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            marginBottom: '40px'
+          }}
+        >
+          <h2 style={{ fontSize: '18px', fontWeight: '600', color: '#111', margin: '0 0 16px 0' }}>
+            Create New Form
+          </h2>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <input
+              type="text"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleCreateForm()}
+              placeholder="Enter form title..."
+              style={{
+                flex: 1,
+                padding: '12px 16px',
+                border: '1px solid #ddd',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontFamily: 'inherit'
+              }}
+            />
+            <button
+              onClick={handleCreateForm}
+              style={{
+                padding: '12px 32px',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontSize: '14px',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#2563eb')}
+              onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#3b82f6')}
+            >
+              Create
+            </button>
+          </div>
+        </div>
       </div>
 
-      {loading ? (
-        <p>Loading forms...</p>
-      ) : forms.length === 0 ? (
-        <p>No forms yet. Create one!</p>
-      ) : (
-        <div>
-          <h2>Your Forms ({forms.length})</h2>
-          {forms.map((form) => (
-            <div
-              key={form.id}
-              style={{
-                padding: '15px',
-                marginBottom: '10px',
-                border: '1px solid #ddd',
-                borderRadius: '6px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <div>
-                <Link href={`/builder/${form.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  <h3 style={{ cursor: 'pointer', color: '#0066cc' }}>{form.title}</h3>
-                </Link>
-                <p>{form.description}</p>
-                <p style={{ fontSize: '12px', color: '#666' }}>
-                  Status: {form.is_published ? '✅ Published' : '📝 Draft'}
-                </p>
-                {form.is_published && (
-                  <p style={{ fontSize: '12px', color: '#0066cc', marginTop: '5px' }}>
-                    <strong>Public Link:</strong> <code>localhost:3000/respond/{form.public_slug}</code>
-                  </p>
-                )}
-              </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button
-                  onClick={() => handlePublish(form.id, form.is_published)}
-                  style={{ padding: '6px 12px', cursor: 'pointer' }}
-                >
-                  {form.is_published ? 'Unpublish' : 'Publish'}
-                </button>
+      {/* Forms Grid */}
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#111', marginBottom: '24px' }}>
+          Your Forms ({forms.length})
+        </h2>
 
-                {form.is_published && (
-                  <Link href={`/results/${form.id}`} style={{ textDecoration: 'none' }}>
-                    <button style={{ padding: '6px 12px', cursor: 'pointer', background: '#28a745', color: 'white' }}>
-                      View Results
-                    </button>
-                  </Link>
-                )}
-                
-                <button
-                  onClick={() => handleDelete(form.id)}
-                  style={{ padding: '6px 12px', cursor: 'pointer', background: '#ff6b6b', color: 'white' }}
+        {loading ? (
+          <p style={{ color: '#666', textAlign: 'center', padding: '40px' }}>Loading...</p>
+        ) : forms.length === 0 ? (
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: '40px',
+              textAlign: 'center',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            }}
+          >
+            <p style={{ color: '#666', fontSize: '16px' }}>
+              No forms yet. Create one to get started!
+            </p>
+          </div>
+        ) : (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gap: '24px'
+            }}
+          >
+            {forms.map((form) => (
+              <div
+                key={form.id}
+                style={{
+                  backgroundColor: 'white',
+                  borderRadius: '12px',
+                  padding: '24px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  transition: 'box-shadow 0.2s',
+                  cursor: 'pointer'
+                }}
+                onMouseOver={(e) =>
+                  (e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)')
+                }
+                onMouseOut={(e) =>
+                  (e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)')
+                }
+              >
+                {/* Form Title */}
+                <h3
+                  onClick={() => router.push(`/builder/${form.id}`)}
+                  style={{
+                    fontSize: '18px',
+                    fontWeight: '600',
+                    color: '#3b82f6',
+                    margin: '0 0 8px 0',
+                    cursor: 'pointer',
+                    textDecoration: 'none'
+                  }}
                 >
-                  Delete
-                </button>
+                  {form.title}
+                </h3>
+
+                {/* Description */}
+                <p style={{ color: '#666', fontSize: '14px', margin: '0 0 16px 0' }}>
+                  {form.description || 'No description'}
+                </p>
+
+                {/* Stats */}
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '16px',
+                    marginBottom: '16px',
+                    paddingBottom: '16px',
+                    borderBottom: '1px solid #eee'
+                  }}
+                >
+                  <div>
+                    <p style={{ fontSize: '12px', color: '#999', margin: '0 0 4px 0' }}>
+                      Responses
+                    </p>
+                    <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#111', margin: '0' }}>
+                      {form.responseCount}
+                    </p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '12px', color: '#999', margin: '0 0 4px 0' }}>
+                      Status
+                    </p>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        padding: '4px 12px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        backgroundColor: form.is_published ? '#d1fae5' : '#fef3c7',
+                        color: form.is_published ? '#059669' : '#d97706'
+                      }}
+                    >
+                      {form.is_published ? 'Published' : 'Draft'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Public Link (if published) */}
+                {form.is_published && form.public_slug && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <p style={{ fontSize: '12px', color: '#999', margin: '0 0 4px 0' }}>
+                      Public Link
+                    </p>
+                    <a
+                      href={`http://localhost:3000/respond/${form.public_slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontSize: '12px',
+                        color: '#3b82f6',
+                        textDecoration: 'none',
+                        wordBreak: 'break-all'
+                      }}
+                    >
+                      localhost:3000/respond/{form.public_slug}
+                    </a>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => router.push(`/builder/${form.id}`)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      backgroundColor: '#e3e8ef',
+                      color: '#111',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#d1d9e6')}
+                    onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#e3e8ef')}
+                  >
+                    Edit
+                  </button>
+
+                  {form.responseCount > 0 && (
+                    <button
+                      onClick={() => router.push(`/results/${form.id}`)}
+                      style={{
+                        flex: 1,
+                        padding: '8px 12px',
+                        backgroundColor: '#10b981',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '13px',
+                        fontWeight: '500',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.2s'
+                      }}
+                      onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#059669')}
+                      onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#10b981')}
+                    >
+                      Responses
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => handlePublish(form.id, form.is_published)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      backgroundColor: form.is_published ? '#f97316' : '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseOver={(e) =>
+                      (e.currentTarget.style.backgroundColor = form.is_published
+                        ? '#ea580c'
+                        : '#2563eb')
+                    }
+                    onMouseOut={(e) =>
+                      (e.currentTarget.style.backgroundColor = form.is_published
+                        ? '#f97316'
+                        : '#3b82f6')
+                    }
+                  >
+                    {form.is_published ? 'Unpublish' : 'Publish'}
+                  </button>
+
+                  <button
+                    onClick={() => handleDelete(form.id)}
+                    style={{
+                      padding: '8px 12px',
+                      backgroundColor: '#ef4444',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'background-color 0.2s'
+                    }}
+                    onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#dc2626')}
+                    onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#ef4444')}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
