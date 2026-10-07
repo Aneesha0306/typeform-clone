@@ -360,7 +360,7 @@ export default function BuilderPage() {
                 placeholder="Question text..."
                 value={questionText}
                 onChange={(e) => setQuestionText(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 text-gray-900 bg-white"
               />
 
               <select
@@ -369,7 +369,7 @@ export default function BuilderPage() {
                   setQuestionType(e.target.value);
                   setOptions([]);
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 text-gray-900 bg-white"
               >
                 <option value="short_text">Short Text</option>
                 <option value="long_text">Long Text</option>
@@ -392,7 +392,7 @@ export default function BuilderPage() {
                       value={currentOption}
                       onChange={(e) => setCurrentOption(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && handleAddOption()}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded text-gray-900 bg-white"
                     />
                     <button onClick={handleAddOption} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                       Add
@@ -418,7 +418,7 @@ export default function BuilderPage() {
                 placeholder="Description (optional)..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 text-gray-900 bg-white"
                 rows={2}
               />
 
@@ -485,7 +485,7 @@ export default function BuilderPage() {
               placeholder="Question text..."
               value={editQuestionText}
               onChange={(e) => setEditQuestionText(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 text-gray-900 bg-white"
             />
 
             {/* Question Type */}
@@ -495,7 +495,7 @@ export default function BuilderPage() {
                 setEditQuestionType(e.target.value);
                 setEditOptions([]);
               }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 text-gray-900 bg-white"
             >
               <option value="short_text">Short Text</option>
               <option value="long_text">Long Text</option>
@@ -537,7 +537,7 @@ export default function BuilderPage() {
                     value={editCurrentOption}
                     onChange={(e) => setEditCurrentOption(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleEditAddOption()}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded text-gray-900 bg-white"
                   />
                   <button
                     onClick={handleEditAddOption}
@@ -554,7 +554,7 @@ export default function BuilderPage() {
               placeholder="Description (optional)..."
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 text-gray-900 bg-white"
               rows={2}
             />
 

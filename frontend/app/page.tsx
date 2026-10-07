@@ -137,7 +137,9 @@ export default function Dashboard() {
                 border: '1px solid #ddd',
                 borderRadius: '8px',
                 fontSize: '14px',
-                fontFamily: 'inherit'
+                fontFamily: 'inherit',
+                color: '#111',
+                backgroundColor: '#fff'
               }}
             />
             <button
