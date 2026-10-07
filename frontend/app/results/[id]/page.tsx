@@ -50,8 +50,10 @@ export default function ResultsPage() {
     const formId = parseInt(params.id as string);
     if (!formId || isNaN(formId)) return;
 
-    const fetchData = async () => {
+    const loadResponses = async (showLoading = true) => {
       try {
+        if (showLoading) setLoading(true);
+
         const formData = await getForm(formId);
         const questionsData = await getFormQuestions(formId);
         const formWithQuestions = {
@@ -69,11 +71,18 @@ export default function ResultsPage() {
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
-        setLoading(false);
+        if (showLoading) setLoading(false);
       }
     };
 
-    fetchData();
+    loadResponses();
+
+    // Auto-refresh responses every 5 seconds
+    const interval = setInterval(() => {
+      loadResponses(false);
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, [params.id]);
 
   if (loading) {

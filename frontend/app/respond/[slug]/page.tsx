@@ -207,7 +207,7 @@ export default function RespondPage() {
                   onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
                   placeholder="Your answer..."
                   autoFocus
-                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
                 />
               )}
 
@@ -218,7 +218,7 @@ export default function RespondPage() {
                   placeholder="Your answer..."
                   rows={6}
                   autoFocus
-                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
                 />
               )}
 
@@ -229,7 +229,7 @@ export default function RespondPage() {
                   onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
                   placeholder="your@email.com"
                   autoFocus
-                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
                 />
               )}
 
@@ -240,7 +240,7 @@ export default function RespondPage() {
                   onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
                   placeholder="0"
                   autoFocus
-                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
                 />
               )}
 
@@ -267,7 +267,7 @@ export default function RespondPage() {
                   value={answers[currentQuestion.id] || ''}
                   onChange={(e) => handleAnswerChange(currentQuestion.id, e.target.value)}
                   autoFocus
-                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white"
                 >
                   <option value="">Select an option</option>
                   {currentQuestion.options?.map((option) => (
