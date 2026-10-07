@@ -319,7 +319,7 @@ export default function BuilderPage() {
     try {
       await updateForm(formId!, { is_published: true });
 
-      const publicUrl = `http://localhost:3000/respond/${form.public_slug}`;
+      const publicUrl = typeof window !== 'undefined' ? `${window.location.origin}/respond/${form.public_slug}` : `http://localhost:3000/respond/${form.public_slug}`;
 
       alert(`✓ Form Published!\n\nPublic URL:\n${publicUrl}\n\nClick OK to see responses.`);
 

@@ -102,7 +102,7 @@ export default function ResultsPage() {
     return new Date(dateString).toLocaleString();
   };
 
-  const publicUrl = `http://localhost:3000/respond/${form.public_slug}`;
+  const publicUrl = typeof window !== 'undefined' ? `${window.location.origin}/respond/${form.public_slug}` : `http://localhost:3000/respond/${form.public_slug}`;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
@@ -140,7 +140,7 @@ export default function ResultsPage() {
               type="text"
               value={publicUrl}
               readOnly
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900"
             />
             <button
               onClick={() => {
