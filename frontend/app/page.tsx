@@ -35,11 +35,11 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  async function loadForms() {
+  async function loadForms(showLoading = true) {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const formsData = await getForms();
-      
+
       // Fetch response count for each form
       const formsWithCount = await Promise.all(
         formsData.map(async (form: Form) => {
@@ -55,12 +55,12 @@ export default function Dashboard() {
           }
         })
       );
-      
+
       setForms(formsWithCount);
     } catch (error) {
       console.error('Error loading forms:', error);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }
 
