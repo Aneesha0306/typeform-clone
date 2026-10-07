@@ -29,7 +29,7 @@ export default function Dashboard() {
 
     // Auto-refresh response counts every 5 seconds
     const interval = setInterval(() => {
-      loadForms();
+      loadForms(false);
     }, 5000);
 
     return () => clearInterval(interval);
