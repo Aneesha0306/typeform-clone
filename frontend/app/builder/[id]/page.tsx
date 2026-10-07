@@ -74,18 +74,18 @@ function PreviewQuestion({ question }: { question: Question }) {
   const renderInput = () => {
     switch (question.question_type) {
       case 'short_text':
-        return <input type="text" placeholder="Answer..." className="w-full px-3 py-2 border border-gray-300 rounded" />;
+        return <input type="text" placeholder="Answer..." className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900 bg-white" />;
       case 'long_text':
-        return <textarea placeholder="Answer..." className="w-full px-3 py-2 border border-gray-300 rounded" rows={4} />;
+        return <textarea placeholder="Answer..." className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900 bg-white" rows={4} />;
       case 'email':
-        return <input type="email" placeholder="your@email.com" className="w-full px-3 py-2 border border-gray-300 rounded" />;
+        return <input type="email" placeholder="your@email.com" className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900 bg-white" />;
       case 'number':
-        return <input type="number" placeholder="0" className="w-full px-3 py-2 border border-gray-300 rounded" />;
+        return <input type="number" placeholder="0" className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900 bg-white" />;
       case 'multiple_choice':
         return (
           <div className="space-y-2">
             {question.options?.map((opt) => (
-              <label key={opt.id} className="flex items-center gap-2">
+              <label key={opt.id} className="flex items-center gap-2 text-gray-900">
                 <input type="radio" name={`q${question.id}`} className="w-4 h-4" />
                 {opt.option_text}
               </label>
@@ -94,7 +94,7 @@ function PreviewQuestion({ question }: { question: Question }) {
         );
       case 'dropdown':
         return (
-          <select className="w-full px-3 py-2 border border-gray-300 rounded">
+          <select className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900 bg-white">
             <option>Select an option</option>
             {question.options?.map((opt) => (
               <option key={opt.id}>{opt.option_text}</option>
@@ -104,11 +104,11 @@ function PreviewQuestion({ question }: { question: Question }) {
       case 'yes_no':
         return (
           <div className="space-y-2">
-            <label className="flex items-center gap-2">
+            <label className="flex items-center gap-2 text-gray-900">
               <input type="radio" name={`q${question.id}`} />
               Yes
             </label>
-            <label className="flex items-center gap-2">
+            <label className="flex items-center gap-2 text-gray-900">
               <input type="radio" name={`q${question.id}`} />
               No
             </label>
@@ -118,14 +118,14 @@ function PreviewQuestion({ question }: { question: Question }) {
         return (
           <div className="flex gap-2">
             {[1, 2, 3, 4, 5].map((i) => (
-              <button key={i} className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">
+              <button key={i} className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 text-gray-900">
                 {i}
               </button>
             ))}
           </div>
         );
       default:
-        return <input type="text" placeholder="Answer..." className="w-full px-3 py-2 border border-gray-300 rounded" />;
+        return <input type="text" placeholder="Answer..." className="w-full px-3 py-2 border border-gray-300 rounded text-gray-900 bg-white" />;
     }
   };
 
